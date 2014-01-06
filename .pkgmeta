@@ -1,0 +1,6 @@
+package-as: LootWonAlert_Hider_Mover
+
+tools-used:
+    - findglobals
+    
+enable-nolib-creation: no

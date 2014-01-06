@@ -7,6 +7,23 @@ local SAMPLE_ITEMLINK;
 -------------------
 -- Do not change anything below here!
 
+-- List globals here for Mikk's FindGlobals script.
+--
+-- Slash commands:
+-- GLOBALS: SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 , SLASH_LOOTWON_SHOW1, SLASH_LOOTWON_SHOW2, SLASH_LOOTWON_HIDE1, SLASH_LOOTWON_HIDE2
+--
+-- AlertFrame functions:
+-- GLOBALS: AlertFrame_ResumeOutAnimation, AlertFrame_SetLootWonAnchors, AlertFrame_StopOutAnimation, LootWonAlertFrame_ShowAlert
+--
+-- SavedVariables:
+-- GLOBALS: LOOTWON_HIDE, LOOTWON_SHOW, LOOTWON_SAVED_POSITIONS
+--
+-- WoW API functions:
+-- GLOBALS: GetItemInfo, CreateFrame
+--
+-- Constants:
+-- GLOBALS: LOOT_ROLL_TYPE_NEED
+
 local addon, ns = ...
 
 local UNLOCKED = false
@@ -18,6 +35,9 @@ local movers = {}
 
 local alerts = LOOT_WON_ALERT_FRAMES
 local bonusAlert = BonusRollLootWonFrame
+
+local rawget, rawset, pairs, unpack, setmetatable = rawget, rawset, pairs, unpack, setmetatable
+local select, print = select, print
 
 ------------
 -- Movers --
