@@ -1,6 +1,5 @@
 ﻿local NUM_SAMPLE_FRAMES = 5 -- 5 alert frames just about fill the screen
 local SAMPLE_ITEMID = 80211 -- Enchanting Test Sword
-local SAMPLE_ITEMLINK;
 
 -------------------
 -- END OF CONFIG --
@@ -35,6 +34,7 @@ local movers = {}
 
 local alerts = LOOT_WON_ALERT_FRAMES
 local bonusAlert = BonusRollLootWonFrame
+local garrisonMissionAlert = GarrisonMissionAlertFrame
 
 local rawget, rawset, pairs, unpack, setmetatable = rawget, rawset, pairs, unpack, setmetatable
 local select, print = select, print
@@ -42,6 +42,8 @@ local select, print = select, print
 ------------
 -- Movers --
 ------------
+
+local SAMPLE_ITEMLINK
 
 local function GetLink()
 	if not SAMPLE_ITEMLINK then
@@ -113,9 +115,17 @@ local function CreateMover(frame)
 	
 	local text = mover:CreateFontString("$parentText", "OVERLAY", "GameFontNormal")
 	text:SetDrawLayer("OVERLAY", 7)
-	text:SetFormattedText("Loot Won Alert #%d\n\nClick and drag to move this frame.", frame.alertIndex)
 	text:SetPoint("CENTER")
 	mover.text = text
+	
+	local alertIndex = frame.alertIndex
+	if alertIndex == -2 then
+		text:SetText("Garrison Mission Alert\n\nClick and drag to move this frame.")
+	elseif alertIndex == -1 then
+		text:SetText("Bonus Loot Alert\n\nClick and drag to move this frame.")
+	else
+		text:SetFormattedText("Loot Won Alert #%d\n\nClick and drag to move this frame.", alertIndex)
+	end
 	
 	movers[frame.alertIndex] = mover
 end
@@ -139,6 +149,11 @@ local function ShowMovers()
 		LootWonAlertFrame_ShowAlert(SAMPLE_ITEMLINK, 1, LOOT_ROLL_TYPE_NEED, 42)
 	end
 	
+	local firstMission = C_Garrison.GetCompleteMissions()[1] or C_Garrison.GetAvailableMissions()[1]
+	if firstMission then
+		GarrisonMissionAlertFrame_ShowAlert(firstMission.missionID)
+	end
+	
 	for _, mover in pairs(movers) do
 		mover:Show()
 	end
@@ -156,6 +171,10 @@ end
 
 local function AlertFrame_SetLootWonAnchors_Hook(alertAnchor)
 	-- print("AF_SLWA_Hook")
+	Reanchor()
+end
+
+local function AlertFrame_SetGarrisonMissionAlertFrameAnchors_Hook(alertAnchor)
 	Reanchor()
 end
 
@@ -206,6 +225,7 @@ local function UpdateHooks(moverOnly)
 	end
 	
 	Hook(bonusAlert, -1,  moverOnly) -- We give the bonus alert frame the special index -1 because it's not in the LOOT_WON_ALERT_FRAMES table
+	Hook(garrisonMissionAlert, -2, moverOnly)
 end
 
 local function RemoveHooks()
@@ -239,6 +259,16 @@ local function LootWonAlertFrame_ShowAlert_Hook(itemLink, quantity, rollType, ro
 end
 
 hooksecurefunc("LootWonAlertFrame_ShowAlert", LootWonAlertFrame_ShowAlert_Hook)
+
+local function GarrisonMissionAlertFrame_ShowAlert_Hook(missionID)
+	if LOOTWON_HIDE == nil then
+		LOOTWON_HIDE = true
+	end
+	
+	UpdateHooks(not LOOTWON_HIDE)
+end
+
+hooksecurefunc("GarrisonMissionAlertFrame_ShowAlert", GarrisonMissionAlertFrame_ShowAlert_Hook)
 
 ---------------------
 -- Saved Variables --
