@@ -83,8 +83,12 @@ function Mover:OnDragStop()
 	
 	local savedPos = LOOTWON_SAVED_POSITIONS[self.alertIndex]
 	local anchor = savedPos[2]
-	if anchor and anchor.GetName then
-		savedPos[2] = anchor:GetName()
+	if anchor then
+		if anchor.GetName then
+			savedPos[2] = anchor:GetName()
+		end
+	else
+		savedPos[2] = "UIParent"
 	end
 end
 
@@ -141,9 +145,7 @@ local function Reanchor()
 	end
 end
 
-local function ShowMovers()
-	-- print"ShowMovers"
-	UNLOCKED = true
+local function ShowFrames()
 	GetLink()
 	for i = 1, NUM_SAMPLE_FRAMES do
 		LootWonAlertFrame_ShowAlert(SAMPLE_ITEMLINK, 1, LOOT_ROLL_TYPE_NEED, 42)
@@ -153,6 +155,15 @@ local function ShowMovers()
 	if firstMission then
 		GarrisonMissionAlertFrame_ShowAlert(firstMission.missionID)
 	end
+end
+
+LootWon_ShowFrames = ShowFrames
+
+local function ShowMovers()
+	-- print"ShowMovers"
+	UNLOCKED = true
+	
+	ShowFrames()
 	
 	for _, mover in pairs(movers) do
 		mover:Show()
@@ -169,16 +180,26 @@ local function HideMovers()
 	end
 end
 
-local function AlertFrame_SetLootWonAnchors_Hook(alertAnchor)
-	-- print("AF_SLWA_Hook")
+local function ResetPositions()
+	for _, mover in pairs(movers) do
+		local alertIndex = mover.alertIndex
+		
+		local savedPos = rawget(LOOTWON_SAVED_POSITIONS, alertIndex)
+		if savedPos then
+			mover.parent:ClearAllPoints()
+		end
+		
+		LOOTWON_SAVED_POSITIONS[alertIndex] = nil
+	end
+	
+	ShowFrames()
+end
+
+local function AlertFrame_FixAnchors_Hook()
 	Reanchor()
 end
 
-local function AlertFrame_SetGarrisonMissionAlertFrameAnchors_Hook(alertAnchor)
-	Reanchor()
-end
-
-hooksecurefunc("AlertFrame_SetLootWonAnchors", AlertFrame_SetLootWonAnchors_Hook)
+hooksecurefunc("AlertFrame_FixAnchors", AlertFrame_FixAnchors_Hook)
 
 SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 = "/lootwonlock", "/lwl"
 SlashCmdList.LOOTWON_TOGGLELOCK = function()
@@ -193,6 +214,12 @@ SlashCmdList.LOOTWON_TOGGLELOCK = function()
 			print("Loot Won Alerts unlocked.")
 		end
 	end
+end
+
+SLASH_LOOTWON_RESET1, SLASH_LOOTWON_RESET2 = "/lootwonreset", "/lwr"
+SlashCmdList.LOOTWON_RESET = function()
+	ResetPositions()
+	print("Loot Won Alert positions have been reset")
 end
 
 ------------------
