@@ -145,9 +145,9 @@ local function Reanchor()
 	end
 end
 
-local function ShowFrames()
+local function ShowFrames(numFrames)
 	GetLink()
-	for i = 1, NUM_SAMPLE_FRAMES do
+	for i = 1, numFrames or NUM_SAMPLE_FRAMES do
 		LootWonAlertFrame_ShowAlert(SAMPLE_ITEMLINK, 1, LOOT_ROLL_TYPE_NEED, 42)
 	end
 	
@@ -157,7 +157,16 @@ local function ShowFrames()
 	end
 end
 
+local function HideFrames()
+	for i = 1, #alerts do
+		alerts[i]:Hide()
+	end
+	
+	garrisonMissionAlert:Hide()
+end
+
 LootWon_ShowFrames = ShowFrames
+LootWon_HideFrames = HideFrames
 
 local function ShowMovers()
 	-- print"ShowMovers"
@@ -325,5 +334,8 @@ function f:ADDON_LOADED(name)
 		})
 		UpdateHooks(not LOOTWON_HIDE)
 		self:UnregisterEvent("ADDON_LOADED")
+		
+		ShowFrames()
+		HideFrames()
 	end
 end
