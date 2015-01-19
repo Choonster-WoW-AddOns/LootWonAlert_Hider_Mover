@@ -156,14 +156,31 @@ end
 
 local function ReanchorFrame(mover)
 	local savedPos = rawget(LOOTWON_SAVED_POSITIONS[mover.alertType], mover.alertIndex)
+	local parent = mover.parent
 	if savedPos then
-		mover.parent:ClearAllPoints()
-		mover.parent:SetPoint(unpack(savedPos))
+		parent:ClearAllPoints()
+		parent:SetPoint(unpack(savedPos))
+	elseif parent:GetNumPoints() > 1 then
+		-- Alerts that get pushed off the screen seem to have their TOP point set to a positive y-offset from the TOP of the screen
+		-- This causes them to stretch when the alert that they're anchored to is moved instead of moving with it
+		-- To fix this, we find the real anchor point, clear all points and then restore the real one
+		print("Found alert with incorrect anchor.", "alertType", mover.alertType, "alertIndex", mover.alertIndex, "name", parent:GetName() or "<unnamed>")
+		
+		local point, relativeTo, relativePoint, xOffset, yOffset
+		for i = 1, parent:GetNumPoints() do
+			point, relativeTo, relativePoint, xOffset, yOffset = parent:GetPoint(i)
+			if point == "BOTTOM" then -- This is the real anchor point, use it
+				break
+			end
+		end
+		
+		parent:ClearAllPoints()
+		parent:SetPoint(point, relativeTo, relativePoint, xOffset, yOffset)
 	end
 end
 
 local function ReanchorFrames()
-	-- print("Reanchor")
+	-- print("ReanchorFrames")
 	ForAllMovers(ReanchorFrame)
 end
 
@@ -229,18 +246,19 @@ local function ResetPosition(mover)
 	local alertType = mover.alertType
 	local alertIndex = mover.alertIndex
 
-	local savedPos = rawget(LOOTWON_SAVED_POSITIONS, alertIndex)
+	local savedPos = rawget(LOOTWON_SAVED_POSITIONS[alertType], alertIndex)
 	if savedPos then
 		mover.parent:ClearAllPoints()
 	end
 
-	LOOTWON_SAVED_POSITIONS[alertIndex] = nil
+	LOOTWON_SAVED_POSITIONS[alertType][alertIndex] = nil
 end
 
 local function ResetPositions()
+	HideFrames()
+	HideMovers()
 	ForAllMovers(ResetPosition)
-
-	ShowFrames()
+	ShowMovers()
 end
 
 local function AlertFrame_FixAnchors_Hook()

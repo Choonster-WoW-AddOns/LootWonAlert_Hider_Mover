@@ -1,3 +1,7 @@
+## 1.08.00
+- Fix Garrison Mission Alert being stretched when the alert(s) it's anchored to are moved
+- Fix /lootwonreset command
+
 ## 1.07.00
 - Fix error 'FrameXML\AlertFrames.lua:885: Usage: GetItemInfo(itemID|"name"|"itemlink")'
 - Add support for the Loot Upgrade Alerts
