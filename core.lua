@@ -9,34 +9,38 @@ local SAMPLE_ITEMID = 80211 -- Enchanting Test Sword
 -- List globals here for Mikk's FindGlobals script.
 --
 -- Slash commands:
--- GLOBALS: SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 , SLASH_LOOTWON_SHOW1, SLASH_LOOTWON_SHOW2, SLASH_LOOTWON_HIDE1, SLASH_LOOTWON_HIDE2
+-- GLOBALS: SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 , SLASH_LOOTWON_SHOW1, SLASH_LOOTWON_SHOW2, SLASH_LOOTWON_HIDE1, SLASH_LOOTWON_HIDE2, SLASH_LOOTWON_RESET1, SLASH_LOOTWON_RESET2
+--
+-- Exported functions:
+-- GLOBALS: LootWon_ShowFrames, LootWon_HideFrames
 --
 -- AlertFrame functions:
--- GLOBALS: AlertFrame_ResumeOutAnimation, AlertFrame_SetLootWonAnchors, AlertFrame_StopOutAnimation, LootWonAlertFrame_ShowAlert
+-- GLOBALS: AlertFrame_ResumeOutAnimation, AlertFrame_StopOutAnimation, LootWonAlertFrame_ShowAlert, GarrisonMissionAlertFrame_ShowAlert, LootUpgradeFrame_ShowAlert
 --
 -- SavedVariables:
--- GLOBALS: LOOTWON_HIDE, LOOTWON_SHOW, LOOTWON_SAVED_POSITIONS
+-- GLOBALS: LOOTWON_HIDE, LOOTWON_SAVED_POSITIONS
 --
 -- WoW API functions:
--- GLOBALS: GetItemInfo, CreateFrame
+-- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison
 --
 -- Constants:
--- GLOBALS: LOOT_ROLL_TYPE_NEED
+-- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC
 
 local addon, ns = ...
 
 local UNLOCKED = false
 local originalScripts = {}
 local hookedFrames = {}
-local movers = {}
+local allMovers = { wonAlerts = {}, upgradeAlerts = {}, specialAlerts = {} }
 -- LW_MOVERS = movers
 -- LW_HOOKED = hookedFrames
 
-local alerts = LOOT_WON_ALERT_FRAMES
+local wonAlerts = LOOT_WON_ALERT_FRAMES
+local upgradeAlerts = LOOT_UPGRADE_ALERT_FRAMES
 local bonusAlert = BonusRollLootWonFrame
 local garrisonMissionAlert = GarrisonMissionAlertFrame
 
-local rawget, rawset, pairs, unpack, setmetatable = rawget, rawset, pairs, unpack, setmetatable
+local rawget, rawset, pairs, unpack, setmetatable, wipe = rawget, rawset, pairs, unpack, setmetatable, wipe
 local select, print = select, print
 
 ------------
@@ -79,9 +83,10 @@ end
 
 function Mover:OnDragStop()
 	self.parent:StopMovingOrSizing()
-	LOOTWON_SAVED_POSITIONS(self.alertIndex, self.parent:GetPoint()) -- Store the position using the __call metamethod
-	
-	local savedPos = LOOTWON_SAVED_POSITIONS[self.alertIndex]
+
+	LOOTWON_SAVED_POSITIONS[self.alertType](self.alertIndex, self.parent:GetPoint()) -- Store the position using the __call metamethod
+
+	local savedPos = LOOTWON_SAVED_POSITIONS[self.alertType][self.alertIndex]
 	local anchor = savedPos[2]
 	if anchor then
 		if anchor.GetName then
@@ -95,20 +100,21 @@ end
 local function CreateMover(frame)
 	-- print("CreateMover!", frame, frame:GetName())
 	frame:SetMovable(true)
-	
+
 	local mover = CreateFrame("Frame", "$parentMoverFrame", frame)
 	mover.parent = frame
-	mover.alertIndex = frame.alertIndex
+	mover.alertType = frame.LW_alertType
+	mover.alertIndex = frame.LW_alertIndex
 	mover:SetAllPoints()
 	mover:RegisterForDrag("LeftButton")
 	mover:Hide()
-	
+
 	for script, func in pairs(Mover) do
 		mover:SetScript(script, func)
 	end
-	
-	frame.moverFrame = mover
-	
+
+	frame.LW_moverFrame = mover
+
 	local overlay = mover:CreateTexture("$parentOverlay")
 	overlay:SetDrawLayer("OVERLAY", 6)
 	overlay:SetTexture("Interface\\Tooltips\\UI-Tooltip-Background")
@@ -116,41 +122,62 @@ local function CreateMover(frame)
 	overlay:SetBlendMode("BLEND")
 	overlay:SetAllPoints()
 	mover.overlay = overlay
-	
+
 	local text = mover:CreateFontString("$parentText", "OVERLAY", "GameFontNormal")
 	text:SetDrawLayer("OVERLAY", 7)
 	text:SetPoint("CENTER")
 	mover.text = text
-	
-	local alertIndex = frame.alertIndex
-	if alertIndex == -2 then
-		text:SetText("Garrison Mission Alert\n\nClick and drag to move this frame.")
-	elseif alertIndex == -1 then
-		text:SetText("Bonus Loot Alert\n\nClick and drag to move this frame.")
-	else
-		text:SetFormattedText("Loot Won Alert #%d\n\nClick and drag to move this frame.", alertIndex)
+
+	local alertType, alertIndex = mover.alertType, mover.alertIndex
+	local displayText
+
+	if alertType == "wonAlerts" then
+		displayText = ("Loot Won Alert #%d"):format(alertIndex)
+	elseif alertType == "upgradeAlerts" then
+		displayText = ("Loot Upgrade Alert #%d"):format(alertIndex)
+	elseif alertIndex == 2 then
+		displayText = "Garrison Mission Alert"
+	elseif alertIndex == 1 then
+		displayText = "Bonus Loot Alert"
 	end
-	
-	movers[frame.alertIndex] = mover
+
+	text:SetText(displayText .. "\n\nClick and drag to move this frame.")
+
+	allMovers[mover.alertType][mover.alertIndex] = mover
 end
 
-local function Reanchor()
-	-- print("Reanchor")
-	for _, mover in pairs(movers) do
-		local savedPos = rawget(LOOTWON_SAVED_POSITIONS, mover.alertIndex)
-		if savedPos then
-			mover.parent:ClearAllPoints()
-			mover.parent:SetPoint(unpack(savedPos))
+local function ForAllMovers(func)
+	for alertType, movers in pairs(allMovers) do
+		for alertIndex, mover in pairs(movers) do
+			func(mover)
 		end
 	end
 end
 
+local function ReanchorFrame(mover)
+	local savedPos = rawget(LOOTWON_SAVED_POSITIONS[mover.alertType], mover.alertIndex)
+	if savedPos then
+		mover.parent:ClearAllPoints()
+		mover.parent:SetPoint(unpack(savedPos))
+	end
+end
+
+local function ReanchorFrames()
+	-- print("Reanchor")
+	ForAllMovers(ReanchorFrame)
+end
+
 local function ShowFrames(numFrames)
 	GetLink()
+
 	for i = 1, numFrames or NUM_SAMPLE_FRAMES do
 		LootWonAlertFrame_ShowAlert(SAMPLE_ITEMLINK, 1, LOOT_ROLL_TYPE_NEED, 42)
 	end
-	
+
+	for i = 1, numFrames or NUM_SAMPLE_FRAMES do
+		LootUpgradeFrame_ShowAlert(SAMPLE_ITEMLINK, 1, GetSpecializationInfo(1), LE_ITEM_QUALITY_EPIC)
+	end
+
 	local firstMission = C_Garrison.GetCompleteMissions()[1] or C_Garrison.GetAvailableMissions()[1]
 	if firstMission then
 		GarrisonMissionAlertFrame_ShowAlert(firstMission.missionID)
@@ -158,54 +185,66 @@ local function ShowFrames(numFrames)
 end
 
 local function HideFrames()
-	for i = 1, #alerts do
-		alerts[i]:Hide()
+	for i = 1, #wonAlerts do
+		wonAlerts[i]:Hide()
 	end
-	
+
+	for i = 1, #upgradeAlerts do
+		upgradeAlerts[i]:Hide()
+	end
+
 	garrisonMissionAlert:Hide()
 end
 
 LootWon_ShowFrames = ShowFrames
 LootWon_HideFrames = HideFrames
 
+local function ShowMover(mover)
+	mover:Show()
+end
+
 local function ShowMovers()
 	-- print"ShowMovers"
 	UNLOCKED = true
-	
+
 	ShowFrames()
-	
-	for _, mover in pairs(movers) do
-		mover:Show()
-	end
-	
-	Reanchor()
+
+	ForAllMovers(ShowMover)
+
+	ReanchorFrames()
+end
+
+local function HideMover(mover)
+	mover:Hide()
 end
 
 local function HideMovers()
 	-- print"HideMovers"
 	UNLOCKED = false
-	for _, mover in pairs(movers) do
-		mover:Hide()
+
+	ForAllMovers(HideMover)
+end
+
+local function ResetPosition(mover)
+	local alertType = mover.alertType
+	local alertIndex = mover.alertIndex
+
+	local savedPos = rawget(LOOTWON_SAVED_POSITIONS, alertIndex)
+	if savedPos then
+		mover.parent:ClearAllPoints()
 	end
+
+	LOOTWON_SAVED_POSITIONS[alertIndex] = nil
 end
 
 local function ResetPositions()
-	for _, mover in pairs(movers) do
-		local alertIndex = mover.alertIndex
-		
-		local savedPos = rawget(LOOTWON_SAVED_POSITIONS, alertIndex)
-		if savedPos then
-			mover.parent:ClearAllPoints()
-		end
-		
-		LOOTWON_SAVED_POSITIONS[alertIndex] = nil
-	end
-	
+	ForAllMovers(ResetPosition)
+
 	ShowFrames()
 end
 
 local function AlertFrame_FixAnchors_Hook()
-	Reanchor()
+	ReanchorFrames()
 end
 
 hooksecurefunc("AlertFrame_FixAnchors", AlertFrame_FixAnchors_Hook)
@@ -235,33 +274,37 @@ end
 -- Alert Hiding --
 ------------------
 
-local function Hook(frame, alertIndex, moverOnly)
+local function Hook(frame, alertType, alertIndex, moverOnly)
 	if hookedFrames[frame] then return end
-	
-	frame.alertIndex = alertIndex
-	
-	if not frame.moverFrame then
+
+	frame.LW_alertType = alertType
+	frame.LW_alertIndex = alertIndex
+
+	if not frame.LW_moverFrame then
 		CreateMover(frame)
 	end
-	
+
 	if moverOnly then return end
 
 	hookedFrames[frame] = true
 	originalScripts[frame] = frame:GetScript("OnShow")
-	
+
 	frame:HookScript("OnShow", frame.Hide)
 	frame:Hide()
 end
 
 local function UpdateHooks(moverOnly)
 	-- print("UpdateHooks:", moverOnly)
-	for i = 1, #alerts do
-		local frame = alerts[i]
-		Hook(frame, i, moverOnly)
+	for i = 1, #wonAlerts do
+		Hook(wonAlerts[i], "wonAlerts", i, moverOnly)
 	end
-	
-	Hook(bonusAlert, -1,  moverOnly) -- We give the bonus alert frame the special index -1 because it's not in the LOOT_WON_ALERT_FRAMES table
-	Hook(garrisonMissionAlert, -2, moverOnly)
+
+	for i = 1, #upgradeAlerts do
+		Hook(upgradeAlerts[i], "upgradeAlerts", i, moverOnly)
+	end
+
+	Hook(bonusAlert, "specialAlerts", 1,  moverOnly)
+	Hook(garrisonMissionAlert, "specialAlerts", 2, moverOnly)
 end
 
 local function RemoveHooks()
@@ -290,7 +333,7 @@ local function LootWonAlertFrame_ShowAlert_Hook(itemLink, quantity, rollType, ro
 	if LOOTWON_HIDE == nil then
 		LOOTWON_HIDE = true
 	end
-	
+
 	UpdateHooks(not LOOTWON_HIDE)
 end
 
@@ -300,7 +343,7 @@ local function GarrisonMissionAlertFrame_ShowAlert_Hook(missionID)
 	if LOOTWON_HIDE == nil then
 		LOOTWON_HIDE = true
 	end
-	
+
 	UpdateHooks(not LOOTWON_HIDE)
 end
 
@@ -312,30 +355,49 @@ hooksecurefunc("GarrisonMissionAlertFrame_ShowAlert", GarrisonMissionAlertFrame_
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function(self, event, ...)
 	self[event](self, ...)
 end)
 
+local meta = {
+	__index = function(self, index) -- Automatically create a table when a non-existent index is accessed
+		local t = {}
+		rawset(self, index, t)
+		return t
+	end,
+	__call = function(self, index, ...) -- Store the position of a frame when the table is called with an index and the returns of :GetPoint()
+		local t = self[index]
+		for i = 1, select("#", ...) do
+			t[i] = select(i, ...)
+		end
+	end
+}
+
+local function makeTable()
+	return setmetatable({}, meta)
+end
+
 function f:ADDON_LOADED(name)
 	if name == addon then
-		LOOTWON_SAVED_POSITIONS = LOOTWON_SAVED_POSITIONS or {}
-		setmetatable(LOOTWON_SAVED_POSITIONS, {
-			__index = function(self, index) -- Automatically create a table when a non-existent index is accessed
-				local t = {}
-				rawset(self, index, t)
-				return t
-			end,
-			__call = function(self, index, ...) -- Store the position of a frame when the table is called with an index and the returns of :GetPoint()
-				local t = self[index]
-				for i = 1, select("#", ...) do
-					t[i] = select(i, ...)
-				end
-			end
-		})
+		local savedPositions = LOOTWON_SAVED_POSITIONS
+
+		if not savedPositions or not savedPositions.wonAlerts then
+			savedPositions = { specialAlerts = {}, wonAlerts = {}, upgradeAlerts = {} }
+		end
+
+		setmetatable(savedPositions.specialAlerts, meta)
+		setmetatable(savedPositions.wonAlerts, meta)
+		setmetatable(savedPositions.upgradeAlerts, meta)
+
+		LOOTWON_SAVED_POSITIONS = savedPositions
+
 		UpdateHooks(not LOOTWON_HIDE)
 		self:UnregisterEvent("ADDON_LOADED")
-		
-		ShowFrames()
-		HideFrames()
 	end
+end
+
+function f:PLAYER_ENTERING_WORLD()
+	ShowFrames()
+	HideFrames()
 end

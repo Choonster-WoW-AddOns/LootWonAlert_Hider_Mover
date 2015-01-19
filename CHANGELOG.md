@@ -1,3 +1,8 @@
+## 1.07.00
+- Fix error 'FrameXML\AlertFrames.lua:885: Usage: GetItemInfo(itemID|"name"|"itemlink")'
+- Add support for the Loot Upgrade Alerts
+- Any existing saved positions will be reset due to restructuring of the saved positions data
+
 ## 1.06.00
 - Fix alert frames not being moved to saved positions (properly this time)
 
