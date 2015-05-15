@@ -1,5 +1,6 @@
 ﻿local NUM_SAMPLE_FRAMES = 5 -- 5 alert frames just about fill the screen
 local SAMPLE_ITEMID = 80211 -- Enchanting Test Sword
+local SAMPLE_MONEY = 13370000 -- 1337g
 
 -------------------
 -- END OF CONFIG --
@@ -31,11 +32,12 @@ local addon, ns = ...
 local UNLOCKED = false
 local originalScripts = {}
 local hookedFrames = {}
-local allMovers = { wonAlerts = {}, upgradeAlerts = {}, specialAlerts = {} }
+local allMovers = { wonAlerts = {}, moneyAlerts = {}, upgradeAlerts = {}, specialAlerts = {} }
 -- LW_MOVERS = movers
 -- LW_HOOKED = hookedFrames
 
 local wonAlerts = LOOT_WON_ALERT_FRAMES
+local moneyAlerts = MONEY_WON_ALERT_FRAMES
 local upgradeAlerts = LOOT_UPGRADE_ALERT_FRAMES
 local bonusAlert = BonusRollLootWonFrame
 local garrisonMissionAlert = GarrisonMissionAlertFrame
@@ -133,6 +135,8 @@ local function CreateMover(frame)
 
 	if alertType == "wonAlerts" then
 		displayText = ("Loot Won Alert #%d"):format(alertIndex)
+	elseif alertType == "moneyAlerts" then
+		displayText = ("Money Won Alert #%d"):format(alertIndex)
 	elseif alertType == "upgradeAlerts" then
 		displayText = ("Loot Upgrade Alert #%d"):format(alertIndex)
 	elseif alertIndex == 2 then
@@ -186,14 +190,20 @@ end
 
 local function ShowFrames(numFrames)
 	GetLink()
+	
+	numFrames = numFrames or NUM_SAMPLE_FRAMES
 
-	for i = 1, numFrames or NUM_SAMPLE_FRAMES do
+	for i = 1, numFrames do
 		LootWonAlertFrame_ShowAlert(SAMPLE_ITEMLINK, 1, LOOT_ROLL_TYPE_NEED, 42)
 	end
 
-	for i = 1, numFrames or NUM_SAMPLE_FRAMES do
-		LootUpgradeFrame_ShowAlert(SAMPLE_ITEMLINK, 1, GetSpecializationInfo(1), LE_ITEM_QUALITY_EPIC)
+	for i = 1, numFrames do
+		MoneyWonAlertFrame_ShowAlert(SAMPLE_MONEY)
 	end
+	
+	for i = 1, numFrames do
+		LootUpgradeFrame_ShowAlert(SAMPLE_ITEMLINK, 1, GetSpecializationInfo(1), LE_ITEM_QUALITY_EPIC)
+	end	
 
 	local firstMission = C_Garrison.GetCompleteMissions()[1] or C_Garrison.GetAvailableMissions()[1]
 	if firstMission then
@@ -204,6 +214,10 @@ end
 local function HideFrames()
 	for i = 1, #wonAlerts do
 		wonAlerts[i]:Hide()
+	end
+	
+	for i = 1, #moneyAlerts do
+		moneyAlerts[i]:Hide()
 	end
 
 	for i = 1, #upgradeAlerts do
@@ -316,6 +330,10 @@ local function UpdateHooks(moverOnly)
 	for i = 1, #wonAlerts do
 		Hook(wonAlerts[i], "wonAlerts", i, moverOnly)
 	end
+	
+	for i = 1, #moneyAlerts do
+		Hook(moneyAlerts[i], "moneyAlerts", i, moverOnly)
+	end
 
 	for i = 1, #upgradeAlerts do
 		Hook(upgradeAlerts[i], "upgradeAlerts", i, moverOnly)
@@ -403,9 +421,12 @@ function f:ADDON_LOADED(name)
 		if not savedPositions or not savedPositions.wonAlerts then
 			savedPositions = { specialAlerts = {}, wonAlerts = {}, upgradeAlerts = {} }
 		end
+		
+		savedPositions.moneyAlerts = savedPositions.moneyAlerts or {}
 
 		setmetatable(savedPositions.specialAlerts, meta)
 		setmetatable(savedPositions.wonAlerts, meta)
+		setmetatable(savedPositions.moneyAlerts, meta)
 		setmetatable(savedPositions.upgradeAlerts, meta)
 
 		LOOTWON_SAVED_POSITIONS = savedPositions

@@ -1,3 +1,7 @@
+## 1.09.00
+- Update to 6.1 (60100)
+- Add support for the Money Won Alerts
+
 ## 1.08.00
 - Fix Garrison Mission Alert being stretched when the alert(s) it's anchored to are moved
 - Fix /lootwonreset command
