@@ -410,10 +410,6 @@ local meta = {
 	end
 }
 
-local function makeTable()
-	return setmetatable({}, meta)
-end
-
 function f:ADDON_LOADED(name)
 	if name == addon then
 		local savedPositions = LOOTWON_SAVED_POSITIONS
@@ -437,6 +433,11 @@ function f:ADDON_LOADED(name)
 end
 
 function f:PLAYER_ENTERING_WORLD()
+	local enableSound = GetCVar("Sound_EnableAllSound")
+	SetCVar("Sound_EnableAllSound", 0)
+	
 	ShowFrames()
 	HideFrames()
+	
+	SetCVar("Sound_EnableAllSound", enableSound)
 end

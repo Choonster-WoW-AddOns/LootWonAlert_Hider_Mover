@@ -1,3 +1,7 @@
+## 1.10.00
+- Update to 6.2 (60200)
+- Stop loot sound from being played at login
+
 ## 1.09.00
 - Update to 6.1 (60100)
 - Add support for the Money Won Alerts
