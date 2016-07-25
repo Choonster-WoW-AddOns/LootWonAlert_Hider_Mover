@@ -1,3 +1,10 @@
+## 1.11.00
+- Update to 7.0 (70000)
+- Rewrite for the new alert frame system
+- Add support for the Garrison Ship Mission Alert
+- Change the sample item from Enchanting Test Sword to Aluneth
+  - The item data for Enchanting Test Sword is no longer available in-game
+
 ## 1.10.00
 - Update to 6.2 (60200)
 - Stop loot sound from being played at login
