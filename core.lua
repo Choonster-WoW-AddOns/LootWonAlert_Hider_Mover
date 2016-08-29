@@ -681,6 +681,7 @@ end
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function(self, event, ...)
 	self[event](self, ...)
 end)
@@ -697,4 +698,9 @@ function f:ADDON_LOADED(name)
 		
 		self:UnregisterEvent("ADDON_LOADED")
 	end
+end
+
+function f:PLAYER_ENTERING_WORLD()
+	GetLink() -- Try to load the item data for the sample item
+	self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 end
