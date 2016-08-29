@@ -710,6 +710,7 @@ end
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function(self, event, ...)
 	self[event](self, ...)
 end)
@@ -725,5 +726,29 @@ function f:ADDON_LOADED(name)
 		CreateHookManagers()
 		
 		self:UnregisterEvent("ADDON_LOADED")
+	end
+end
+
+function f:PLAYER_ENTERING_WORLD()
+	GetLink() -- Try to get the link again
+	
+	debugprint("PLAYER_ENTERING_WORLD", "Link", SAMPLE_ITEMLINK)
+	
+	if not SAMPLE_ITEMLINK then -- If we don't have it, wait for GET_ITEM_INFO_RECEIVED
+		f:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+	end
+	
+	f:UnregisterEvent("PLAYER_ENTERING_WORLD")
+end
+
+function f:GET_ITEM_INFO_RECEIVED(itemID)
+	if itemID == SAMPLE_ITEMID then
+		GetLink() -- We should get the link now
+		
+		debugprint("GET_ITEM_INFO_RECEIVED", "Link", SAMPLE_ITEMLINK)
+		
+		if SAMPLE_ITEMLINK then -- If we have it, unregister the event
+			f:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
+		end
 	end
 end
