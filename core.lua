@@ -588,7 +588,10 @@ local SAMPLE_ITEMLINK
 
 local function GetLink()
 	if not SAMPLE_ITEMLINK then
-		SAMPLE_ITEMLINK = select(2, GetItemInfo(SAMPLE_ITEMID))
+		local _, itemLink = GetItemInfo(SAMPLE_ITEMID) -- Call GetItemInfo once with the item ID
+		if itemLink then -- If the item link was returned,
+			_, SAMPLE_ITEMLINK = GetItemInfo(itemLink) -- Call GetItemInfo a second time with the item link to ensure that the alert system can do the same and get valid results
+		end
 	end
 end
 
