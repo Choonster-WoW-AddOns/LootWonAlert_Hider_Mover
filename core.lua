@@ -24,10 +24,10 @@ local SAMPLE_MONEY = 13370000 -- 1337g
 -- GLOBALS: CreateFromMixins
 --
 -- WoW API functions:
--- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison, hooksecurefunc, UnitLevel, GetExpansionLevel
+-- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison, hooksecurefunc
 --
 -- Constants:
--- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC, LE_FOLLOWER_TYPE_GARRISON_6_0, LE_FOLLOWER_TYPE_SHIPYARD_6_2, LE_FOLLOWER_TYPE_GARRISON_7_0, LE_EXPANSION_WARLORDS_OF_DRAENOR
+-- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC, LE_FOLLOWER_TYPE_GARRISON_6_0, LE_FOLLOWER_TYPE_SHIPYARD_6_2, LE_FOLLOWER_TYPE_GARRISON_7_0, LE_GARRISON_TYPE_6_0, LE_GARRISON_TYPE_7_0
 
 local addon, ns = ...
 
@@ -68,10 +68,13 @@ local function ShowAlertsAndMovers(hookManager)
 	else
 		local alertType = hookManager:GetAlertType()
 		
-		-- Don't warn players about Garrison alerts if they're lower than 90 or don't have WoD.
-		if (alertType ~= "GarrisonMission" and alertType ~= "GarrisonShipMission") or (UnitLevel("player") >= 90 and GetExpansionLevel() >= LE_EXPANSION_WARLORDS_OF_DRAENOR) then
-			print(("Failed to show alerts of type %s. Try locking and unlocking again."):format(alertType))
-		end
+		-- Don't warn players about Garrison alerts if they don't have a Garrison or Shipyard alerts if they don't have a shipyard
+		if 
+			(alertType == "GarrisonMission" and not C_Garrison.HasGarrison(LE_GARRISON_TYPE_7_0) and not C_Garrison.HasGarrison(LE_GARRISON_TYPE_6_0)) or
+			(alertType == "GarrisonShipMission" and not C_Garrison.HasShipyard())
+		then return end
+		
+		print(("Failed to show alerts of type %s. Try locking and unlocking again."):format(alertType))
 	end
 end
 
