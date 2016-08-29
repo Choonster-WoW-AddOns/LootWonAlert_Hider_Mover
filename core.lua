@@ -24,10 +24,10 @@ local SAMPLE_MONEY = 13370000 -- 1337g
 -- GLOBALS: CreateFromMixins
 --
 -- WoW API functions:
--- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison, hooksecurefunc
+-- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison, hooksecurefunc, UnitLevel, GetExpansionLevel
 --
 -- Constants:
--- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC, LE_FOLLOWER_TYPE_GARRISON_6_0, LE_FOLLOWER_TYPE_SHIPYARD_6_2, LE_FOLLOWER_TYPE_GARRISON_7_0
+-- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC, LE_FOLLOWER_TYPE_GARRISON_6_0, LE_FOLLOWER_TYPE_SHIPYARD_6_2, LE_FOLLOWER_TYPE_GARRISON_7_0, LE_EXPANSION_WARLORDS_OF_DRAENOR
 
 local addon, ns = ...
 
@@ -61,6 +61,20 @@ local function debugprint() end
 -- Slash Commands --
 ------------------
 
+local function ShowAlertsAndMovers(hookManager)
+	local success = hookManager:ShowAlerts()
+	if success then
+		hookManager:ShowMovers()
+	else
+		local alertType = hookManager:GetAlertType()
+		
+		-- Don't warn players about Garrison alerts if they're lower than 90 or don't have WoD.
+		if (alertType ~= "GarrisonMission" and alertType ~= "GarrisonShipMission") or (UnitLevel("player") >= 90 and GetExpansionLevel() >= LE_EXPANSION_WARLORDS_OF_DRAENOR) then
+			print(("Failed to show alerts of type %s. Try locking and unlocking again."):format(alertType))
+		end
+	end
+end
+
 SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 = "/lootwonlock", "/lwl"
 SlashCmdList.LOOTWON_TOGGLELOCK = function()
 	UNLOCKED = not UNLOCKED
@@ -70,8 +84,7 @@ SlashCmdList.LOOTWON_TOGGLELOCK = function()
 			print("Loow Won Alerts are hidden. Use /lootwonshow or /lws to show them before using /lootwonlock again.")
 		else
 			for alertType, hookManager in pairs(HookManagers) do
-				hookManager:ShowAlerts()
-				hookManager:ShowMovers()
+				ShowAlertsAndMovers(hookManager)
 			end
 			
 			print("Loot Won Alerts unlocked.")
@@ -91,8 +104,7 @@ SlashCmdList.LOOTWON_RESET = function()
 		hookManager:HideAlerts()
 		hookManager:HideMovers()
 		hookManager:ResetPositions()
-		hookManager:ShowAlerts()
-		hookManager:ShowMovers()
+		ShowAlertsAndMovers(hookManager)
 	end
 	
 	print("Loot Won Alert positions have been reset")
@@ -419,6 +431,9 @@ function AlertFrameSimpleSystem_HookManagerMixin:ShowAlerts()
 	
 	if arguments[1] then
 		self.subsystem:AddAlert(unpack(arguments, 1, arguments.n))
+		return true
+	else
+		return false
 	end
 end
 
@@ -473,6 +488,10 @@ function AlertFrameBonusLoot_HookManager:ShowAlerts()
 		
 		LootWonAlertFrame_SetUp(self.frame, unpack(arguments, 1, arguments.n))
 		AlertFrame:AddAlertFrame(self.frame)
+		
+		return true
+	else
+		return false
 	end	
 end
 
@@ -548,6 +567,10 @@ function AlertFrameQueueSystem_HookManagerMixin:ShowAlerts()
 		for i = 1, numAlerts do
 			self.subsystem:AddAlert(unpack(arguments, 1, arguments.n))
 		end
+		
+		return true
+	else
+		return false
 	end
 end
 
