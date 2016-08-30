@@ -592,8 +592,11 @@ local SAMPLE_ITEMLINK
 local function GetLink()
 	if not SAMPLE_ITEMLINK then
 		local _, itemLink = GetItemInfo(SAMPLE_ITEMID) -- Call GetItemInfo once with the item ID
+		debugprint("GetLink", "itemLink1", itemLink)
+		
 		if itemLink then -- If the item link was returned,
 			_, SAMPLE_ITEMLINK = GetItemInfo(itemLink) -- Call GetItemInfo a second time with the item link to ensure that the alert system can do the same and get valid results
+			debugprint("GetLink", "itemLink2", SAMPLE_ITEMLINK)
 		end
 	end
 end
