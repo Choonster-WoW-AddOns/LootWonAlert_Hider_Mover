@@ -411,41 +411,6 @@ function SingleFrame_HookManagerMixin:EnumerateActiveAlerts()
 	return pairs(self.frameTable)
 end
 
----------------------------
--- Simple Subystem Mixin --
----------------------------
-
-local AlertFrameSimpleSystem_HookManagerMixin = CreateFromMixins(SingleFrame_HookManagerMixin)
-
-function AlertFrameSimpleSystem_HookManagerMixin:OnLoad(subsystem, alertType, sampleArgumentsFunction, moverTextFunction)
-	SingleFrame_HookManagerMixin.OnLoad(self, subsystem.alertFrame, alertType, sampleArgumentsFunction, moverTextFunction)
-	
-	self.subsystem = subsystem
-	
-	hooksecurefunc(subsystem, "AdjustAnchors", function(subsystem, relativeFrame)
-		self:ReanchorAlerts()
-	end)
-end
-
-function AlertFrameSimpleSystem_HookManagerMixin:ShowAlerts()
-	local arguments = pack(self.sampleArgumentsFunction())
-	
-	debugprint("Simple:ShowAlerts", "AlertType", self:GetAlertType(), "Args", unpack(arguments, 1, arguments.n))
-	
-	if arguments[1] then
-		self.subsystem:AddAlert(unpack(arguments, 1, arguments.n))
-		return true
-	else
-		return false
-	end
-end
-
-local function CreateAlertFrameSimpleSystem_HookManager(subsystem, alertType, sampleArgumentsFunction, moverTextFunction)
-	local hookManager = CreateFromMixins(AlertFrameSimpleSystem_HookManagerMixin)
-	hookManager:OnLoad(subsystem, alertType, sampleArgumentsFunction, moverTextFunction)
-	return hookManager
-end
-
 --------------------------------
 -- Bonus Loot Mixin --
 --------------------------------
@@ -663,7 +628,7 @@ local function CreateHookManagers()
 		end
 	)
 	
-	HookManagers.GarrisonMission = CreateAlertFrameSimpleSystem_HookManager(GarrisonMissionAlertSystem, "GarrisonMission",
+	HookManagers.GarrisonMission = CreateAlertFrameQueueSystem_HookManager(GarrisonMissionAlertSystem, "GarrisonMission",
 		function()
 			return GetFirstGarrisonMission(LE_FOLLOWER_TYPE_GARRISON_7_0, LE_FOLLOWER_TYPE_GARRISON_6_0)
 		end,
@@ -672,7 +637,7 @@ local function CreateHookManagers()
 		end
 	)
 	
-	HookManagers.GarrisonShipMission = CreateAlertFrameSimpleSystem_HookManager(GarrisonShipMissionAlertSystem, "GarrisonShipMission",
+	HookManagers.GarrisonShipMission = CreateAlertFrameQueueSystem_HookManager(GarrisonShipMissionAlertSystem, "GarrisonShipMission",
 		function()
 			return GetFirstGarrisonMission(LE_FOLLOWER_TYPE_SHIPYARD_6_2)
 		end,

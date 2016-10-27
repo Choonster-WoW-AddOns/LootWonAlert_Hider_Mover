@@ -1,4 +1,4 @@
-﻿## Interface: 70000
+﻿## Interface: 70100
 ## Title: Loot Won Alert Hider/Mover
 ## Version: @project-version@
 ## Author: Choonster

@@ -1,3 +1,9 @@
+## 1.12.00
+- Update to 7.1 (70100)
+- Fix error "LootWonAlert_Hider_Mover\core.lua:384: table index is nil"
+	- Remove the simple subsystem hook manager (used for Garrison Mission/Ship Mission Alerts) and replace it with the queue subsystem hook manager
+	- The previous implementation of the simple subsystem has been replaced with the queue subsystem limited to one alert
+
 ## 1.11.00
 - Update to 7.0 (70000)
 - Rewrite for the new alert frame system
