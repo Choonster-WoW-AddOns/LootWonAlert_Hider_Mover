@@ -1,3 +1,7 @@
+## 1.13.00
+- Fix error "FrameXML\AlertFrameSystems.lua:715: attempt to index local 'missionInfo' (a number value)"
+	- The Garrison Mission/Ship Mission Alerts now take the entire missionInfo table as an argument instead of just the mission ID
+
 ## 1.12.00
 - Update to 7.1 (70100)
 - Fix error "LootWonAlert_Hider_Mover\core.lua:384: table index is nil"

@@ -577,13 +577,13 @@ local function GetFirstGarrisonMission(...)
 		C_Garrison.GetCompleteMissions(missions, followerType)
 		
 		if missions[1] then
-			return missions[1].missionID
+			return missions[1]
 		end
 		
 		C_Garrison.GetAvailableMissions(missions, followerType)
 		
 		if missions[1] then
-			return missions[1].missionID
+			return missions[1]
 		end
 	end
 end
