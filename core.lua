@@ -515,7 +515,7 @@ function AlertFrameQueueSystem_HookManagerMixin:HookAlertFrame(frame, moverOnly)
 	
 	-- If the frame doens't have an index it must be the one that was just shown, so set its index to the number of visible alerts
 	if not alertIndex then
-		debugprint("Queue:HookAlertFrame", "Setting index to", self.subsystem:GetNumVisibleAlerts())
+		debugprint("Queue:HookAlertFrame", "AlertType", self:GetAlertType(), "Setting index to", self.subsystem:GetNumVisibleAlerts())
 		-- debugprint("Queue:HookAlertFrame", debugstack())
 		
 		self:SetAlertIndex(frame, self.subsystem:GetNumVisibleAlerts())
