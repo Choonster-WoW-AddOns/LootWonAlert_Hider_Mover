@@ -48,7 +48,7 @@ end
 
 --@alpha@
 local function debugprint(name, ...)
-	if not name:find("BonusLoot", 1, true) then return end
+	-- if not name:find("Pet", 1, true) then return end
 	print(name, ...)
 end
 --@end-alpha@
