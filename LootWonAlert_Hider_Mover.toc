@@ -1,4 +1,4 @@
-﻿## Interface: 70100
+﻿## Interface: 70300
 ## Title: Loot Won Alert Hider/Mover
 ## Version: @project-version@
 ## Author: Choonster
