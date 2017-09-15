@@ -588,6 +588,44 @@ local function GetFirstGarrisonMission(...)
 	end
 end
 
+local function GetFirstPetID()
+	-- Store the current filters
+	local checkedSources = {}
+	for i = 1, C_PetJournal.GetNumPetSources() do
+		checkedSources[i] = C_PetJournal.IsPetSourceChecked(i)
+	end
+	
+	local checkedTypes = {}
+	for i = 1, C_PetJournal.GetNumPetTypes() do
+		checkedTypes[i] = C_PetJournal.IsPetTypeChecked(i)
+	end
+	
+	local collectedChecked = C_PetJournal.IsFilterChecked(LE_PET_JOURNAL_FILTER_COLLECTED)
+	local notCollectedChecked = C_PetJournal.IsFilterChecked(LE_PET_JOURNAL_FILTER_NOT_COLLECTED)
+	
+	-- Clear all filters
+	C_PetJournal.ClearSearchFilter()
+	C_PetJournal.SetAllPetSourcesChecked(true)
+	C_PetJournal.SetAllPetTypesChecked(true)
+	
+	-- Get the GUID of the first pet in the journal
+	local petID = C_PetJournal.GetPetInfoByIndex(1)
+	
+	-- Restore the previous filters
+	for i = 1, #checkedSources do
+		C_PetJournal.SetPetSourceChecked(i, checkedSources[i])
+	end
+	
+	for i = 1, #checkedTypes do
+		C_PetJournal.SetPetTypeFilter(i, checkedTypes[i])
+	end
+	
+	C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_COLLECTED, collectedChecked)
+	C_PetJournal.SetFilterChecked(LE_PET_JOURNAL_FILTER_NOT_COLLECTED, notCollectedChecked)
+	
+	return petID
+end
+
 local function CreateHookManagers()
 	HookManagers.Loot = CreateAlertFrameQueueSystem_HookManager(LootAlertSystem, "Loot",
 		function()
@@ -643,6 +681,25 @@ local function CreateHookManagers()
 		end,
 		function(alertIndex)
 			return "Garrison Ship Mission Alert"
+		end
+	)
+	
+	HookManagers.NewPet = CreateAlertFrameQueueSystem_HookManager(NewPetAlertSystem, "NewPet",
+		function()
+			return GetFirstPetID()
+		end,
+		function(alertIndex)
+			return ("New Pet Alert %d"):format(alertIndex)
+		end
+	)
+	
+	HookManagers.NewMount = CreateAlertFrameQueueSystem_HookManager(NewMountAlertSystem, "NewMount",
+		function()
+			local mountIDs = C_MountJournal.GetMountIDs()
+			return mountIDs[math.random(1, #mountIDs)]
+		end,
+		function(alertIndex)
+			return ("New Mount Alert %d"):format(alertIndex)
 		end
 	)
 end
