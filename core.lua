@@ -1,5 +1,6 @@
 local SAMPLE_ITEMID = 127857 -- Aluneth
 local SAMPLE_MONEY = 13370000 -- 1337g
+local SAMPLE_ENCOUNTERID = 533 -- Kael'thas (Magister's Terrace)
 
 -------------------
 -- END OF CONFIG --
@@ -548,6 +549,44 @@ local function CreateAlertFrameQueueSystem_HookManager(subsystem, alertType, sam
 	return hookManager
 end
 
+-----------------------
+-- Boss Banner Mixin --
+-----------------------
+
+local BB_STATE_BANNER_OUT = 6
+
+local BossBanner_HookManagerMixin = CreateFromMixins(SingleFrame_HookManagerMixin)
+
+function BossBanner_HookManagerMixin:OnLoad(sampleArgumentsFunction, moverTextFunction)
+	SingleFrame_HookManagerMixin.OnLoad(self, BossBanner, "BossBanner", sampleArgumentsFunction, moverTextFunction)
+end
+
+function BossBanner_HookManagerMixin:ShowAlerts()
+	local arguments = pack(self.sampleArgumentsFunction())
+	
+	debugprint("BossBanner:ShowAlerts", "Args:", unpack(arguments, 1, arguments.n))
+	
+	BossBanner_OnEvent(self.frame, "BOSS_KILL", unpack(arguments, 1, arguments.n))
+	
+	return true
+end
+
+function BossBanner_HookManagerMixin:StopOutAnimation(frame)
+	debugprint("BossBanner:StopOutAnimation")
+	BossBanner_SetAnimState(frame, nil)
+end
+
+function BossBanner_HookManagerMixin:ResumeOutAnimation(frame)
+	debugprint("BossBanner:ResumeOutAnimation")
+	BossBanner_SetAnimState(frame, BB_STATE_BANNER_OUT)
+end
+
+local function CreateBossBanner_HookManager(sampleArgumentsFunction, moverTextFunction)
+	local hookManager = CreateFromMixins(BossBanner_HookManagerMixin)
+	hookManager:OnLoad(sampleArgumentsFunction, moverTextFunction)
+	return hookManager
+end
+
 ---------------------
 -- Initialisation --
 ---------------------
@@ -700,6 +739,16 @@ local function CreateHookManagers()
 		end,
 		function(alertIndex)
 			return ("New Mount Alert %d"):format(alertIndex)
+		end
+	)
+	
+	HookManagers.BossBanner = CreateBossBanner_HookManager(
+		function()
+			local name, description, encounterID, rootSectionID, link = EJ_GetEncounterInfo(SAMPLE_ENCOUNTERID)
+			return SAMPLE_ENCOUNTERID, name
+		end,
+		function(alertIndex)
+			return "Boss Banner"
 		end
 	)
 end
