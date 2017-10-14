@@ -671,7 +671,7 @@ local function CreateHookManagers()
 			return GetFirstGarrisonMission(LE_FOLLOWER_TYPE_GARRISON_7_0, LE_FOLLOWER_TYPE_GARRISON_6_0)
 		end,
 		function(alertIndex)
-			return "Garrison Mission Alert"
+			return ("Garrison Mission Alert #%d"):format(alertIndex)
 		end
 	)
 	
@@ -680,7 +680,7 @@ local function CreateHookManagers()
 			return GetFirstGarrisonMission(LE_FOLLOWER_TYPE_SHIPYARD_6_2)
 		end,
 		function(alertIndex)
-			return "Garrison Ship Mission Alert"
+			return ("Garrison Ship Mission Alert #%d"):format(alertIndex)
 		end
 	)
 	
