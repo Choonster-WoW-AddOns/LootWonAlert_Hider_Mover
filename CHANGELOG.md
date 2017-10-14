@@ -1,3 +1,12 @@
+## 1.14.00
+- Update to 7.3 (70300)
+- Add support for the New Pet and New Mount alerts
+- Add support for the Boss Banner
+- Add indexes to the Garrison Mission and Ship Mission alert mover text
+- Allow individual alertTypes to be locked, unlocked, shown and hidden
+- Split each section of the AddOn into its own file
+- Clean up globals list and add missing entries
+
 ## 1.13.00
 - Fix error "FrameXML\AlertFrameSystems.lua:715: attempt to index local 'missionInfo' (a number value)"
 	- The Garrison Mission/Ship Mission Alerts now take the entire missionInfo table as an argument instead of just the mission ID
