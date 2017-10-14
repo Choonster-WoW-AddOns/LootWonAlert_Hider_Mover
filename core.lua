@@ -15,20 +15,26 @@ local SAMPLE_ENCOUNTERID = 533 -- Kael'thas (Magister's Terrace)
 -- Exports:
 -- GLOBALS: LootWonAlert_HiderMover_HookManagers
 --
--- Alert Frame frames, functions and systems:
--- GLOBALS: AlertFrame, AlertFrame_ResumeOutAnimation, AlertFrame_StopOutAnimation, LootAlertSystem, MoneyWonAlertSystem, LootUpgradeAlertSystem, GarrisonMissionAlertSystem, GarrisonShipMissionAlertSystem, LootWonAlertFrame_SetUp, BonusRollLootWonFrame, GroupLootContainer, GroupLootContainer_AddFrame, GroupLootContainer_RemoveFrame
+-- Alert Frame frames
+-- GLOBALS: AlertFrame, BonusRollLootWonFrame, GroupLootContainer, BossBanner
+--
+-- Alert Frame functions
+-- GLOBALS: AlertFrame_ResumeOutAnimation, AlertFrame_StopOutAnimation, LootWonAlertFrame_SetUp, GroupLootContainer_AddFrame, GroupLootContainer_RemoveFrame, BossBanner_OnEvent, BossBanner_SetAnimState, BossBanner_OnAnimOutFinished
+--
+-- Alert Frame systems
+-- GLOBALS: LootAlertSystem, MoneyWonAlertSystem, LootUpgradeAlertSystem, GarrisonMissionAlertSystem, GarrisonShipMissionAlertSystem, NewPetAlertSystem, NewMountAlertSystem
 --
 -- Saved Variables:
--- GLOBALS: LOOTWON_HIDE, LOOTWON_SAVED_POSITIONS
+-- GLOBALS: LOOTWON_HIDE, LOOTWON_SAVED_POSITIONS, LOOTWON_HIDDEN_ALERTS
 --
 -- FrameXML functions:
 -- GLOBALS: CreateFromMixins
 --
 -- WoW API functions:
--- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison, hooksecurefunc
+-- GLOBALS: GetItemInfo, CreateFrame, GetSpecializationInfo, C_Garrison, C_PetJournal, C_MountJournal, hooksecurefunc, EJ_GetEncounterInfo
 --
 -- Constants:
--- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC, LE_FOLLOWER_TYPE_GARRISON_6_0, LE_FOLLOWER_TYPE_SHIPYARD_6_2, LE_FOLLOWER_TYPE_GARRISON_7_0, LE_GARRISON_TYPE_6_0, LE_GARRISON_TYPE_7_0
+-- GLOBALS: LOOT_ROLL_TYPE_NEED, LE_ITEM_QUALITY_EPIC, LE_FOLLOWER_TYPE_GARRISON_6_0, LE_FOLLOWER_TYPE_SHIPYARD_6_2, LE_FOLLOWER_TYPE_GARRISON_7_0, LE_GARRISON_TYPE_6_0, LE_GARRISON_TYPE_7_0, LE_PET_JOURNAL_FILTER_COLLECTED, LE_PET_JOURNAL_FILTER_NOT_COLLECTED
 
 local addon, ns = ...
 
@@ -41,6 +47,7 @@ local UnlockedAlerts = {}
 local pairs, unpack, setmetatable, wipe = pairs, unpack, setmetatable, wipe
 local select, print = select, print
 local tinsert, tconcat = table.insert, table.concat
+local random = math.random
 local debugstack = debugstack
 
 -- table.pack from Lua 5.2+
@@ -845,7 +852,7 @@ local function CreateHookManagers()
 	HookManagers.NewMount = CreateAlertFrameQueueSystem_HookManager(NewMountAlertSystem, "NewMount",
 		function()
 			local mountIDs = C_MountJournal.GetMountIDs()
-			return mountIDs[math.random(1, #mountIDs)]
+			return mountIDs[random(1, #mountIDs)]
 		end,
 		function(alertIndex)
 			return ("New Mount Alert %d"):format(alertIndex)
