@@ -657,6 +657,10 @@ local BossBanner_HookManagerMixin = CreateFromMixins(SingleFrame_HookManagerMixi
 
 function BossBanner_HookManagerMixin:OnLoad(sampleArgumentsFunction, moverTextFunction)
 	SingleFrame_HookManagerMixin.OnLoad(self, BossBanner, "BossBanner", sampleArgumentsFunction, moverTextFunction)
+	
+	self.frame:HookScript("OnShow", function(frame)
+		self:ReanchorAlert(frame)
+	end)
 end
 
 function BossBanner_HookManagerMixin:CreateNewOnShowScript(frame)
