@@ -32,13 +32,15 @@ local SAMPLE_ENCOUNTERID = 533 -- Kael'thas (Magister's Terrace)
 
 local addon, ns = ...
 
-local UNLOCKED = false
-
+local AlertTypes = {}
 local HookManagers = {}
 LootWonAlert_HiderMover_HookManagers = HookManagers
 
+local UnlockedAlerts = {}
+
 local pairs, unpack, setmetatable, wipe = pairs, unpack, setmetatable, wipe
 local select, print = select, print
+local tinsert, tconcat = table.insert, table.concat
 local debugstack = debugstack
 
 -- table.pack from Lua 5.2+
@@ -46,6 +48,9 @@ local function pack(...)
 	return { n = select("#", ...), ... }
 end
 
+local function printf(formatString, ...)
+	print(formatString:format(...))
+end
 
 --@alpha@
 local function debugprint(name, ...)
@@ -61,6 +66,19 @@ local function debugprint() end
 ------------------
 -- Slash Commands --
 ------------------
+
+local PrintInvalidAlertTypeMessage
+do
+	local allAlertTypes
+	
+	PrintInvalidAlertTypeMessage = function(invalidAlertType)
+		if not allAlertTypes then
+			allAlertTypes = "all, " .. tconcat(AlertTypes, ", ")
+		end
+		
+		printf("Invalid alertType \"%s\". Valid alertTypes: %s", invalidAlertType, allAlertTypes)
+	end
+end
 
 local function ShowAlertsAndMovers(hookManager)
 	local success = hookManager:ShowAlerts()
@@ -79,62 +97,127 @@ local function ShowAlertsAndMovers(hookManager)
 	end
 end
 
-SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 = "/lootwonlock", "/lwl"
-SlashCmdList.LOOTWON_TOGGLELOCK = function()
-	UNLOCKED = not UNLOCKED
-	
-	if UNLOCKED then
-		if LOOTWON_HIDE then
-			print("Loow Won Alerts are hidden. Use /lootwonshow or /lws to show them before using /lootwonlock again.")
-		else
+-- Create a slash command function that performs an action for the specified alertType or prints an error message if it isn't.
+-- preprocessor - function(inputAlertType)         - Called once at the start of the function with the specified alertType.
+-- callback     - function(alertType, hookManager) - If the specified alertType is "all", this is called once for every hookManager.
+--                                                     - If it returns false every time, messageFunc won't be called and no message will be printed.
+--                                                 - If the specified alertType isn't "all", this is called once for the specified alertType's hookManager.
+--                                                     - If it returns false, messageFunc won't be called and no message will be printed.
+-- messageFunc  - function(inputAlertType)         - Called once at the end of the function with the specified alertType to get a message to print.
+local function CreateSlashCommand(preprocessor, callback, messageFunc)
+	return function(input)
+		local inputAlertType = input:trim()
+		
+		if inputAlertType == "all" then
+			preprocessor(inputAlertType)
+		
+			local success = false
+			
 			for alertType, hookManager in pairs(HookManagers) do
-				ShowAlertsAndMovers(hookManager)
+				local ret = callback(inputAlertType, hookManager)
+				success = success or ret
 			end
 			
-			print("Loot Won Alerts unlocked.")
+			if success then
+				print(messageFunc("All"))
+			end
+			
+			return
 		end
-	else
-		for alertType, hookManager in pairs(HookManagers) do
+		
+		local hookManager = HookManagers[inputAlertType]
+		if hookManager then
+			preprocessor(inputAlertType)
+			
+			local success = callback(inputAlertType, hookManager)
+			if success then
+				print(messageFunc(inputAlertType))
+			end
+		else
+			PrintInvalidAlertTypeMessage(inputAlertType)
+		end
+	end
+end
+
+SLASH_LOOTWON_TOGGLELOCK1, SLASH_LOOTWON_TOGGLELOCK2 = "/lootwonlock", "/lwl"
+SlashCmdList.LOOTWON_TOGGLELOCK = CreateSlashCommand(
+	function(inputAlertType)
+		if UnlockedAlerts[inputAlertType] == nil then
+			UnlockedAlerts[inputAlertType] = true
+		else
+			UnlockedAlerts[inputAlertType] = not UnlockedAlerts[inputAlertType]
+		end
+	end,
+	function(inputAlertType, hookManager)
+		if UnlockedAlerts[inputAlertType] then
+			if hookManager:AreAlertsHidden() then
+				printf("%1$s alerts are hidden. Use /lootwonshow %1$s or /lws %1$s to show them before using /lootwonlock %1$s again.", hookManager:GetAlertType())
+				
+				return false
+			else
+				ShowAlertsAndMovers(hookManager)
+			end
+		else
 			hookManager:HideMovers()
 		end
 		
-		print("Loot Won Alerts locked.")
-	end	
-end
+		return true
+	end,
+	function(inputAlertType)
+		if UnlockedAlerts[inputAlertType] then
+			return ("%s alerts unlocked"):format(inputAlertType)
+		else
+			return ("%s alerts locked"):format(inputAlertType)
+		end
+	end
+)
 
 SLASH_LOOTWON_RESET1, SLASH_LOOTWON_RESET2 = "/lootwonreset", "/lwr"
-SlashCmdList.LOOTWON_RESET = function()
-	for alertType, hookManager in pairs(HookManagers) do
+SlashCmdList.LOOTWON_RESET = CreateSlashCommand(
+	function(inputAlertType)
+	end,
+	function(inputAlertType, hookManager)
 		hookManager:HideAlerts()
 		hookManager:HideMovers()
 		hookManager:ResetPositions()
 		ShowAlertsAndMovers(hookManager)
+		
+		return true
+	end,
+	function(inputAlertType)
+		return ("%s alert positions have been reset."):format(inputAlertType)
 	end
-	
-	print("Loot Won Alert positions have been reset")
-end
+)
 
 SLASH_LOOTWON_SHOW1, SLASH_LOOTWON_SHOW2 = "/lootwonshow", "/lws"
-SlashCmdList.LOOTWON_SHOW = function()
-	LOOTWON_HIDE = false
-	
-	for alertType, hookManager in pairs(HookManagers) do
+SlashCmdList.LOOTWON_SHOW = CreateSlashCommand(
+	function(inputAlertType)
+	end,
+	function(inputAlertType, hookManager)
+		hookManager:SetAlertsHidden(false)
 		hookManager:RemoveHooks()
+		
+		return true
+	end,
+	function(inputAlertType)
+		return ("%s alerts shown."):format(inputAlertType)
 	end
-	
-	print("Loot Won Alerts shown.")
-end
+)
 
 SLASH_LOOTWON_HIDE1, SLASH_LOOTWON_HIDE2 = "/lootwonhide", "/lwh"
-SlashCmdList.LOOTWON_HIDE = function()
-	LOOTWON_HIDE = true
-	
-	for alertType, hookManager in pairs(HookManagers) do
+SlashCmdList.LOOTWON_HIDE = CreateSlashCommand(
+	function(inputAlertType)
+	end,
+	function(inputAlertType, hookManager)
+		hookManager:SetAlertsHidden(true)
 		hookManager:HookAlertFrames()
+		
+		return true
+	end,
+	function(inputAlertType)
+		return ("%s alerts hidden."):format(inputAlertType)
 	end
-	
-	print("Loot Won Alerts hidden.")
-end
+)
 
 ------------
 -- Movers --
@@ -198,14 +281,24 @@ function Base_HookManagerMixin:OnLoad(alertType, sampleArgumentsFunction, moverT
 	
 	LOOTWON_SAVED_POSITIONS[alertType] = LOOTWON_SAVED_POSITIONS[alertType] or {}
 	self.savedPositions = LOOTWON_SAVED_POSITIONS[alertType]
+	
+	tinsert(AlertTypes, alertType)
 end
 
 function Base_HookManagerMixin:GetAlertType()
 	return self.alertType
 end
 
+function Base_HookManagerMixin:AreAlertsHidden()
+	return LOOTWON_HIDDEN_ALERTS[self:GetAlertType()]
+end
+
+function Base_HookManagerMixin:SetAlertsHidden(hidden)
+	LOOTWON_HIDDEN_ALERTS[self:GetAlertType()] = hidden
+end
+
 function Base_HookManagerMixin:HookAlertFrames()
-	local moverOnly = not LOOTWON_HIDE
+	local moverOnly = not self:AreAlertsHidden()
 	
 	debugprint("Base:HookAlertFrames", "AlertType", self:GetAlertType(), "moverOnly", moverOnly)
 	
@@ -782,6 +875,22 @@ local function ConvertSavedPositions(savedPositions)
 	return savedPositions
 end
 
+local function ConvertHiddenState(hiddenAlerts, hidden)
+	hiddenAlerts = hiddenAlerts or {}
+	
+	if hidden == nil then
+		hidden = true
+	end
+	
+	for alertType, hookManager in pairs(HookManagers) do
+		if hiddenAlerts[alertType] == nil then
+			hiddenAlerts[alertType] = hidden
+		end
+	end
+	
+	return hiddenAlerts
+end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -792,12 +901,10 @@ end)
 function f:ADDON_LOADED(name)
 	if name == addon then
 		LOOTWON_SAVED_POSITIONS = ConvertSavedPositions(LOOTWON_SAVED_POSITIONS)
-
-		if LOOTWON_HIDE == nil then
-			LOOTWON_HIDE = true
-		end
-		
+			
 		CreateHookManagers()
+		
+		LOOTWON_HIDDEN_ALERTS = ConvertHiddenState(LOOTWON_HIDDEN_ALERTS, LOOTWON_HIDE)
 		
 		self:UnregisterEvent("ADDON_LOADED")
 	end

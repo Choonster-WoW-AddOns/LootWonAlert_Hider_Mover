@@ -2,7 +2,7 @@
 ## Title: Loot Won Alert Hider/Mover
 ## Version: @project-version@
 ## Author: Choonster
-## Notes: Hides/moves the loot won alert frames.
-## SavedVariables: LOOTWON_HIDE, LOOTWON_SAVED_POSITIONS
+## Notes: Hides/moves various alert frames.
+## SavedVariables: LOOTWON_SAVED_POSITIONS, LOOTWON_HIDDEN_ALERTS
 
 core.lua
