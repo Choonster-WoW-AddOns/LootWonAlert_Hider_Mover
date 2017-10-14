@@ -5,4 +5,12 @@
 ## Notes: Hides/moves various alert frames.
 ## SavedVariables: LOOTWON_SAVED_POSITIONS, LOOTWON_HIDDEN_ALERTS
 
+config.lua
 core.lua
+SlashCommands.lua
+Movers.lua
+Mixins/Base.lua
+Mixins/SingleFrame.lua
+Mixins/BonusLoot.lua
+Mixins/Queue.lua
+Mixins/BossBanner.lua
