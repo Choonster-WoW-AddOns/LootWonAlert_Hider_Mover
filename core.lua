@@ -325,8 +325,13 @@ function Base_HookManagerMixin:HookAlertFrame(frame, moverOnly)
 	self.hookedFrames[frame] = true
 	self.originalScripts[frame] = frame:GetScript("OnShow")
 
-	frame:HookScript("OnShow", frame.Hide)
-	frame:Hide()
+	local onShow = self:CreateNewOnShowScript(frame)
+	frame:HookScript("OnShow", onShow)
+	onShow(frame)
+end
+
+function Base_HookManagerMixin:CreateNewOnShowScript(frame)
+	return frame.Hide
 end
 
 function Base_HookManagerMixin:CreateMover(frame)
@@ -654,14 +659,12 @@ function BossBanner_HookManagerMixin:OnLoad(sampleArgumentsFunction, moverTextFu
 	SingleFrame_HookManagerMixin.OnLoad(self, BossBanner, "BossBanner", sampleArgumentsFunction, moverTextFunction)
 end
 
-function BossBanner_HookManagerMixin:ShowAlerts()
-	local arguments = pack(self.sampleArgumentsFunction())
-	
-	debugprint("BossBanner:ShowAlerts", "Args:", unpack(arguments, 1, arguments.n))
-	
-	BossBanner_OnEvent(self.frame, "BOSS_KILL", unpack(arguments, 1, arguments.n))
-	
-	return true
+function BossBanner_HookManagerMixin:CreateNewOnShowScript(frame)
+	debugprint("BossBanner:CreateNewOnShowScript")
+	return function(frame)
+		debugprint("BossBanner:OnShow hook")
+		BossBanner_OnAnimOutFinished(frame.AnimOut)
+	end
 end
 
 function BossBanner_HookManagerMixin:StopOutAnimation(frame)
@@ -672,6 +675,16 @@ end
 function BossBanner_HookManagerMixin:ResumeOutAnimation(frame)
 	debugprint("BossBanner:ResumeOutAnimation")
 	BossBanner_SetAnimState(frame, BB_STATE_BANNER_OUT)
+end
+
+function BossBanner_HookManagerMixin:ShowAlerts()
+	local arguments = pack(self.sampleArgumentsFunction())
+	
+	debugprint("BossBanner:ShowAlerts", "Args:", unpack(arguments, 1, arguments.n))
+	
+	BossBanner_OnEvent(self.frame, "BOSS_KILL", unpack(arguments, 1, arguments.n))
+	
+	return true
 end
 
 local function CreateBossBanner_HookManager(sampleArgumentsFunction, moverTextFunction)
