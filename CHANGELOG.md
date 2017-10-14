@@ -1,3 +1,6 @@
+## 1.14.01
+- Dummy version to try and fix the CurseForge packager.
+
 ## 1.14.00
 - Update to 7.3 (70300)
 - Add support for the New Pet and New Mount alerts
