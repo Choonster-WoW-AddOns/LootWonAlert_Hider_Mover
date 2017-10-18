@@ -1,3 +1,8 @@
+## 1.14.02
+- Disable non-alpha comments
+	- The CurseForge packager isn't replacing them properly
+	- Should fix "LootWonAlert_Hider_Mover\core.lua:57: attempt to call upvalue 'debugprint' (a nil value)"
+
 ## 1.14.01
 - Dummy version to try and fix the CurseForge packager.
 
