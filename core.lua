@@ -37,9 +37,9 @@ function ns.debugprint(name, ...)
 end
 --@end-alpha@
 
---[===[@non-alpha@
+-- [===[@non-alpha@
 function ns.debugprint() end
---@end-non-alpha@]===]
+-- @end-non-alpha@]===]
 
 local pack, debugprint = ns.pack, ns.debugprint
 
