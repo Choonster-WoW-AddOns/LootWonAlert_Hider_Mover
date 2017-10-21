@@ -1,7 +1,7 @@
 ## 1.14.02
 - Disable non-alpha comments
 	- The CurseForge packager isn't replacing them properly
-	- Should fix "LootWonAlert_Hider_Mover\core.lua:57: attempt to call upvalue 'debugprint' (a nil value)"
+	- Should fix "LootWonAlert\_Hider\_Mover\core.lua:57: attempt to call upvalue 'debugprint' (a nil value)"
 
 ## 1.14.01
 - Dummy version to try and fix the CurseForge packager.
@@ -21,7 +21,7 @@
 
 ## 1.12.00
 - Update to 7.1 (70100)
-- Fix error "LootWonAlert_Hider_Mover\core.lua:384: table index is nil"
+- Fix error "LootWonAlert\_Hider\_Mover\core.lua:384: table index is nil"
 	- Remove the simple subsystem hook manager (used for Garrison Mission/Ship Mission Alerts) and replace it with the queue subsystem hook manager
 	- The previous implementation of the simple subsystem has been replaced with the queue subsystem limited to one alert
 
@@ -54,7 +54,7 @@
 
 ## 1.05.00
 - Fix alert frames not being moved to saved positions
-- Hook AlertFrame_FixAnchors directly instead of AlertFrame_SetLootWonAnchors/AlertFrame_SetGarrisonMissionAlertFrameAnchors
+- Hook AlertFrame\_FixAnchors directly instead of AlertFrame\_SetLootWonAnchors/AlertFrame\_SetGarrisonMissionAlertFrameAnchors
 - Add slash command to reset alert frames to their default positions
 
 ## 1.04.00
