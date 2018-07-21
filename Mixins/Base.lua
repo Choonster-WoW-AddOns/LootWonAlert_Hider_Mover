@@ -229,7 +229,7 @@ function Base_HookManagerMixin:HideMovers()
 end
 
 function Base_HookManagerMixin:StopOutAnimation(frame)
-	AlertFrame_StopOutAnimation(frame)
+	AlertFrame_PauseOutAnimation(frame)
 end
 
 function Base_HookManagerMixin:ResumeOutAnimation(frame)

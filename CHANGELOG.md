@@ -1,3 +1,8 @@
+## 1.15.00
+- Update to 8.0 (80000)
+- Add .travis.yml file and TOC properties for the BigWigs packager script
+	- https://www.wowinterface.com/forums/showthread.php?t=55801
+
 ## 1.14.02
 - Disable non-alpha comments
 	- The CurseForge packager isn't replacing them properly

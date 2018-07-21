@@ -1,9 +1,12 @@
-﻿## Interface: 70300
+﻿## Interface: 80000
 ## Title: Loot Won Alert Hider/Mover
 ## Version: @project-version@
 ## Author: Choonster
 ## Notes: Hides/moves various alert frames.
 ## SavedVariables: LOOTWON_SAVED_POSITIONS, LOOTWON_HIDDEN_ALERTS
+
+## X-Curse-Project-ID: 44136
+## X-WoWI-ID: 21510
 
 config.lua
 core.lua
